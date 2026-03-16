@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ByteBot — Pet Virtual do Dev</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d14;
+    --bg2: #13131f;
+    --bg3: #1a1a2e;
+    --border: rgba(127,119,221,0.25);
+    --border2: rgba(127,119,221,0.5);
+    --purple: #7f77dd;
+    --purple-light: #afa9ec;
+    --purple-dark: #534ab7;
+    --teal: #1d9e75;
+    --teal-light: #5dcaa5;
+    --coral: #d85a30;
+    --pink: #d4537e;
+    --blue: #378add;
+    --amber: #ef9f27;
+    --text: #e8e6f8;
+    --text2: #9490c0;
+    --text3: #5a5680;
+    --green: #97c459;
+    --scanline: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.15) 2px,
+      rgba(0,0,0,0.15) 4px
+    );
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem;
+    background-image:
+      radial-gradient(ellipse at 20% 20%, rgba(127,119,221,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(29,158,117,0.06) 0%, transparent 60%);
+  }
+
+  h1.logo {
+    font-family: 'VT323', monospace;
+    font-size: 48px;
+    color: var(--purple-light);
+    letter-spacing: 6px;
+    text-align: center;
+    margin-bottom: 2px;
+    text-shadow: 0 0 20px rgba(127,119,221,0.5);
+  }
+
+  .tagline {
+    font-size: 12px;
+    color: var(--text3);
+    letter-spacing: 3px;
+    text-align: center;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+  }
+
+  .card {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .card + .card { margin-top: 1rem; }
+
+  /* Pet stage */
+  .pet-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 1.5rem;
+    position: relative;
+  }
+
+  .pet-frame {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    background: var(--bg3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .pet-frame::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--scanline);
+    pointer-events: none;
+    border-radius: 12px;
+  }
+
+  canvas#pet {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    width: 108px;
+    height: 108px;
+  }
+
+  .corner { position: absolute; width: 8px; height: 8px; border-color: var(--purple); border-style: solid; }
+  .corner.tl { top: 4px; left: 4px; border-width: 1px 0 0 1px; }
+  .corner.tr { top: 4px; right: 4px; border-width: 1px 1px 0 0; }
+  .corner.bl { bottom: 4px; left: 4px; border-width: 0 0 1px 1px; }
+  .corner.br { bottom: 4px; right: 4px; border-width: 0 1px 1px 0; }
+
+  .pet-name {
+    font-family: 'VT323', monospace;
+    font-size: 28px;
+    color: var(--purple-light);
+    letter-spacing: 3px;
+  }
+
+  .speech-bubble {
+    background: var(--bg3);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+    color: var(--text2);
+    text-align: center;
+    max-width: 300px;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .speech-bubble::before {
+    content: '>';
+    color: var(--purple);
+    margin-right: 6px;
+  }
+
+  /* XP Bar */
+  .xp-section { padding: 0 1.5rem 1.5rem; }
+
+  .xp-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text3);
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+
+  .xp-meta .level-name { color: var(--purple-light); }
+
+  .xp-bar {
+    height: 6px;
+    background: var(--bg3);
+    border-radius: 99px;
+    overflow: hidden;
+    border: 0.5px solid var(--border);
+  }
+
+  .xp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--purple-dark), var(--purple-light));
+    border-radius: 99px;
+    transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: 0 0 8px rgba(127,119,221,0.6);
+  }
+
+  .evolve-msg {
+    text-align: center;
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    color: var(--amber);
+    letter-spacing: 2px;
+    min-height: 28px;
+    margin-top: 6px;
+    text-shadow: 0 0 12px rgba(239,159,39,0.6);
+  }
+
+  /* Stats */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .stat-card {
+    background: var(--bg3);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .stat-value {
+    font-family: 'VT323', monospace;
+    font-size: 32px;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .stat-unit { font-size: 14px; color: var(--text3); margin-left: 2px; }
+
+  /* Input section */
+  .section-title {
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 0.5px;
+    background: var(--border);
+  }
+
+  .input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .input-group { display: flex; flex-direction: column; gap: 5px; }
+
+  .input-group label {
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .input-group input {
+    background: var(--bg3);
+    border: 0.5px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 15px;
+    padding: 8px 12px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .input-group input:focus { border-color: var(--purple); }
+  .input-group input::placeholder { color: var(--text3); }
+
+  .btn-row { display: flex; gap: 8px; }
+
+  .btn-primary {
+    flex: 1;
+    background: var(--purple-dark);
+    border: 0.5px solid var(--purple);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    letter-spacing: 2px;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s;
+    text-transform: uppercase;
+  }
+
+  .btn-primary:hover {
+    background: var(--purple);
+    box-shadow: 0 0 16px rgba(127,119,221,0.4);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    border: 0.5px solid var(--border2);
+    color: var(--text3);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .btn-secondary:hover { border-color: var(--text2); color: var(--text2); }
+
+  /* Log */
+  .log { max-height: 100px; overflow-y: auto; }
+  .log::-webkit-scrollbar { width: 3px; }
+  .log::-webkit-scrollbar-track { background: var(--bg3); }
+  .log::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+
+  .log-item {
+    font-size: 11px;
+    color: var(--text3);
+    padding: 4px 0;
+    border-bottom: 0.5px solid var(--border);
+    display: flex;
+    gap: 8px;
+  }
+
+  .log-item .log-date { color: var(--purple); min-width: 80px; }
+  .log-item .log-xp { color: var(--teal-light); }
+
+  /* XP breakdown hint */
+  .xp-hint {
+    font-size: 11px;
+    color: var(--text3);
+    text-align: center;
+    letter-spacing: 1px;
+    margin-top: 8px;
+  }
+
+  .xp-hint span { color: var(--purple-light); }
+
+  /* Evolution stages */
+  .stages-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 4px;
+  }
+
+  .stage-dot {
+    flex: 1;
+    height: 4px;
+    background: var(--bg3);
+    border-radius: 99px;
+    border: 0.5px solid var(--border);
+    transition: background 0.4s;
+  }
+
+  .stage-dot.active { background: var(--purple); box-shadow: 0 0 6px rgba(127,119,221,0.5); }
+
+  @media (max-width: 500px) {
+    h1.logo { font-size: 36px; }
+    .card { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<h1 class="logo">BYTEBOT</h1>
+<p class="tagline">pet virtual do dev</p>
+
+<div class="card">
+  <div class="pet-stage">
+    <div class="pet-frame">
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+      <canvas id="pet" width="108" height="108"></canvas>
+    </div>
+    <div class="pet-name" id="pet-name">ByteBot</div>
+    <div class="speech-bubble" id="speech">Carregando...</div>
+  </div>
+
+  <div class="xp-section">
+    <div class="xp-meta">
+      <span class="level-name" id="level-label">Nível 1 — Egg</span>
+      <span id="xp-label">0 / 100 XP</span>
+    </div>
+    <div class="xp-bar"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
+    <div class="stages-row" id="stages-row" style="margin-top:8px;"></div>
+    <div class="evolve-msg" id="evolve-msg"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Horas de código</div><div class="stat-value" id="s-hours">0<span class="stat-unit">h</span></div></div>
+    <div class="stat-card"><div class="stat-label">Commits</div><div class="stat-value" id="s-commits">0</div></div>
+    <div class="stat-card"><div class="stat-label">Projetos</div><div class="stat-value" id="s-projects">0</div></div>
+    <div class="stat-card"><div class="stat-label">Horas de estudo</div><div class="stat-value" id="s-study">0<span class="stat-unit">h</span></div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-title">Registrar dia</div>
+  <div class="input-grid">
+    <div class="input-group"><label>Horas de código</label><input type="number" id="i-hours" min="0" max="24" placeholder="0"></div>
+    <div class="input-group"><label>Commits</label><input type="number" id="i-commits" min="0" placeholder="0"></div>
+    <div class="input-group"><label>Projetos concluídos</label><input type="number" id="i-projects" min="0" placeholder="0"></div>
+    <div class="input-group"><label>Horas de estudo</label><input type="number" id="i-study" min="0" max="24" placeholder="0"></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn-primary" onclick="submitDay()">[ registrar ]</button>
+    <button class="btn-secondary" onclick="resetAll()">reset</button>
+  </div>
+  <div class="xp-hint">
+    código: <span>12xp/h</span> · commit: <span>8xp</span> · projeto: <span>50xp</span> · estudo: <span>10xp/h</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-title">Histórico</div>
+  <div class="log" id="log">
+    <div class="log-item"><span style="color:var(--text3)">Nenhum registro ainda.</span></div>
+  </div>
+</div>
+
+<script>
+const LEVELS = [
+  { name:"Egg",     xpNeeded:100,  color:"#AFA9EC" },
+  { name:"Sprout",  xpNeeded:250,  color:"#5DCAA5" },
+  { name:"Byte",    xpNeeded:500,  color:"#7F77DD" },
+  { name:"Coder",   xpNeeded:900,  color:"#378ADD" },
+  { name:"Hacker",  xpNeeded:1500, color:"#D85A30" },
+  { name:"DevGod",  xpNeeded:9999, color:"#D4537E" },
+];
+
+const SPEECHES = {
+  0:["Ei, me alimenta com código!","Aguardando input...","Psst... abre aquele PR!","Commit is coming..."],
+  1:["Mmm, commits! Delicioso.","Estou crescendo!","Continue assim, dev!","Bug? Que bug?"],
+  2:["Modo hacker: ativado.","Seu código me energiza!","Push feito. Bom trabalho.","git commit -m 'crescendo'"],
+  3:["Lendário. Continue.","CTRL+Z nunca me derrotará!","Deploy às 17h59? Corajoso.","Stack overflow de glória."],
+  4:["Eu sou o código.","null === null: TRUE.","rm -rf /duvidas ✓","Agora somos um."],
+  5:["Transcendi a sintaxe.","Sou a abstração pura.","O compilador me obedece.","404: limites not found."],
+};
+
+let state = { totalXp:0, hours:0, commits:0, projects:0, study:0, log:[] };
+
+function load() { try { const r=localStorage.getItem('bytebot-v2'); if(r) state=JSON.parse(r); } catch(e){} }
+function save() { try { localStorage.setItem('bytebot-v2',JSON.stringify(state)); } catch(e){} }
+
+function getLevelInfo() {
+  let xp=state.totalXp, lvl=0;
+  for(let i=0;i<LEVELS.length-1;i++){
+    if(xp>=LEVELS[i].xpNeeded){xp-=LEVELS[i].xpNeeded;lvl=i+1;}
+    else break;
+  }
+  lvl=Math.min(lvl,LEVELS.length-1);
+  return {lvl, current:xp, needed:LEVELS[lvl].xpNeeded, name:LEVELS[lvl].name};
+}
+
+function calcXP(h,c,p,s){ return Math.round(h*12+c*8+p*50+s*10); }
+
+function submitDay(){
+  const h=parseFloat(document.getElementById('i-hours').value)||0;
+  const c=parseFloat(document.getElementById('i-commits').value)||0;
+  const p=parseFloat(document.getElementById('i-projects').value)||0;
+  const s=parseFloat(document.getElementById('i-study').value)||0;
+  if(!h&&!c&&!p&&!s){showSpeech("Você não fez nada hoje? Tudo bem, amanhã você recupera!");return;}
+  const gained=calcXP(h,c,p,s);
+  const prev=getLevelInfo().lvl;
+  state.totalXp+=gained; state.hours+=h; state.commits+=c; state.projects+=p; state.study+=s;
+  state.log.unshift({date:new Date().toLocaleDateString('pt-BR'),h,c,p,s,xp:gained});
+  if(state.log.length>30)state.log.pop();
+  save();
+  const cur=getLevelInfo().lvl;
+  if(cur>prev){
+    document.getElementById('evolve-msg').textContent='★ EVOLUIU PARA '+LEVELS[cur].name.toUpperCase()+'! ★';
+    setTimeout(()=>document.getElementById('evolve-msg').textContent='',5000);
+  }
+  ['i-hours','i-commits','i-projects','i-study'].forEach(id=>document.getElementById(id).value='');
+  render(); showSpeech(rndSpeech(cur));
+}
+
+function resetAll(){
+  if(!confirm('Resetar tudo? ByteBot vai chorar pixels de verdade.'))return;
+  state={totalXp:0,hours:0,commits:0,projects:0,study:0,log:[]};
+  save(); render();
+}
+
+function rndSpeech(lvl){const a=SPEECHES[Math.min(lvl,5)];return a[Math.floor(Math.random()*a.length)];}
+function showSpeech(msg){document.getElementById('speech').textContent=msg;}
+
+function render(){
+  const info=getLevelInfo();
+  document.getElementById('level-label').textContent='Nível '+(info.lvl+1)+' — '+info.name;
+  document.getElementById('xp-label').textContent=info.current+' / '+info.needed+' XP';
+  document.getElementById('xp-fill').style.width=Math.round(info.current/info.needed*100)+'%';
+  document.getElementById('s-hours').innerHTML=state.hours+'<span class="stat-unit">h</span>';
+  document.getElementById('s-commits').textContent=state.commits;
+  document.getElementById('s-projects').textContent=state.projects;
+  document.getElementById('s-study').innerHTML=state.study+'<span class="stat-unit">h</span>';
+  // stages dots
+  const sr=document.getElementById('stages-row');
+  sr.innerHTML=LEVELS.map((_,i)=>`<div class="stage-dot${i<=info.lvl?' active':''}"></div>`).join('');
+  drawPet(info.lvl);
+  renderLog();
+  if(state.totalXp===0)showSpeech("Ei, me alimenta com código!");
+  else showSpeech(rndSpeech(info.lvl));
+}
+
+function renderLog(){
+  const el=document.getElementById('log');
+  if(!state.log.length){el.innerHTML='<div class="log-item"><span style="color:var(--text3)">Nenhum registro ainda.</span></div>';return;}
+  el.innerHTML=state.log.map(l=>`<div class="log-item"><span class="log-date">${l.date}</span><span class="log-xp">+${l.xp}xp</span><span style="color:var(--text3)">${l.h}h · ${l.c}commits · ${l.p}proj · ${l.s}hest</span></div>`).join('');
+}
+
+function drawPet(lvl){
+  const canvas=document.getElementById('pet');
+  const ctx=canvas.getContext('2d');
+  const S=9;
+  ctx.clearRect(0,0,108,108);
+  const palettes=[
+    {body:'#AFA9EC',eye:'#3C3489',accent:'#CECBF6',shine:'#EEEDFE'},
+    {body:'#5DCAA5',eye:'#085041',accent:'#9FE1CB',shine:'#E1F5EE'},
+    {body:'#7F77DD',eye:'#26215C',accent:'#AFA9EC',shine:'#EEEDFE'},
+    {body:'#378ADD',eye:'#042C53',accent:'#85B7EB',shine:'#E6F1FB'},
+    {body:'#D85A30',eye:'#4A1B0C',accent:'#F0997B',shine:'#FAECE7'},
+    {body:'#D4537E',eye:'#4B1528',accent:'#ED93B1',shine:'#FBEAF0'},
+  ];
+  const p=palettes[Math.min(lvl,palettes.length-1)];
+  const fill=(x,y,c)=>{ctx.fillStyle=c;ctx.fillRect(x*S,y*S,S,S);};
+  const sprites=[
+    ()=>{
+      [[0,0,1,1,1,0,0],[0,1,1,1,1,1,0],[1,1,1,1,1,1,1],[1,1,1,1,1,1,1],[1,1,1,1,1,1,1],[0,1,1,1,1,1,0],[0,0,1,1,1,0,0]].forEach((r,ry)=>r.forEach((v,rx)=>{if(v)fill(2+rx,1+ry,p.body);}));
+      fill(4,2,p.shine);fill(5,3,p.shine);fill(4,5,p.eye);fill(6,5,p.eye);
+    },
+    ()=>{
+      [[0,1,1,1,0],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[0,1,1,1,0]].forEach((r,ry)=>r.forEach((v,rx)=>{if(v)fill(3+rx,4+ry,p.body);}));
+      fill(4,5,p.eye);fill(6,5,p.eye);fill(5,2,p.accent);fill(5,1,p.accent);fill(4,1,p.accent);
+      ctx.fillStyle='#639922';ctx.fillRect(4*S,0,S*2,S);ctx.fillRect(6*S,S,S*2,S);
+    },
+    ()=>{
+      [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]].forEach((r,ry)=>r.forEach((v,rx)=>{if(v)fill(2+rx,1+ry,p.body);}));
+      [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]].forEach((r,ry)=>r.forEach((v,rx)=>{if(v)fill(2+rx,5+ry,p.accent);}));
+      fill(3,2,p.eye);fill(5,2,p.eye);fill(3,4,p.shine);fill(4,4,p.shine);fill(5,4,p.shine);
+      fill(1,6,p.body);fill(1,7,p.body);fill(1,8,p.body);fill(7,6,p.body);fill(7,7,p.body);fill(7,8,p.body);
+      fill(2,0,p.eye);fill(6,0,p.eye);
+    },
+    ()=>{
+      [[0,1,1,1,1,1,0],[1,1,1,1,1,1,1],[1,1,1,1,1,1,1],[1,1,1,1,1,1,1],[0,1,1,1,1,1,0]].forEach((r,ry)=>r.forEach((v,rx)=>{if(v)fill(1+rx,1+ry,p.body);}));
+      fill(2,2,p.eye);fill(3,2,p.eye);fill(5,2,p.eye);fill(6,2,p.eye);fill(3,4,p.shine);fill(4,4,p.shine);fill(5,4,p.shine);
+      [[1,1,1,1,1,1,1],[1,1,1,1,1,1,1],[1,1,0,0,0,1,1],[1,0,1,1,1,0,1]].forEach((r,ry)=>r.forEach((v,rx)=>{if(v)fill(1+rx,6+ry,p.accent);}));
+    },
+    ()=>{
+      fill(2,0,p.eye);fill(6,0,p.eye);fill(2,1,p.eye);fill(6,1,p.eye);
+      [[0,1,1,1,1,1,1,1,0],[1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1],[0,1,1,1,1,1,1,1,0]].forEach((r,ry)=>r.forEach((v,rx)=>{if(v)fill(rx,2+ry,p.body);}));
+      fill(2,3,p.eye);fill(3,3,p.eye);fill(5,3,p.eye);fill(6,3,p.eye);
+      fill(3,5,p.shine);fill(4,5,p.shine);fill(5,5,p.shine);
+      [[1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1]].forEach((r,ry)=>r.forEach((v,rx)=>{if(v)fill(rx,7+ry,p.accent);}));
+    },
+    ()=>{
+      ctx.fillStyle='#FAC775';ctx.fillRect(3*S,0,4*S,S);ctx.fillRect(1*S,S,S,S);ctx.fillRect(8*S,S,S,S);
+      [[0,1,1,1,1,1,1,1,0],[1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1],[0,1,1,1,1,1,1,1,0]].forEach((r,ry)=>r.forEach((v,rx)=>{if(v)fill(rx,2+ry,p.body);}));
+      ctx.fillStyle='#FAC775';ctx.fillRect(3*S,3*S,S,S*2);ctx.fillRect(6*S,3*S,S,S*2);
+      fill(3,5,p.shine);fill(4,5,p.shine);fill(5,5,p.shine);
+      [[1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1]].forEach((r,ry)=>r.forEach((v,rx)=>{if(v)fill(rx,7+ry,p.accent);}));
+      fill(0,8,p.body);fill(9,8,p.body);
+      ctx.fillStyle='#FAC775';ctx.fillRect(0,10*S,S,S);ctx.fillRect(9*S,10*S,S,S);
+    }
+  ];
+  sprites[Math.min(lvl,sprites.length-1)]();
+}
+
+load(); render();
+</script>
+</body>
+</html>
